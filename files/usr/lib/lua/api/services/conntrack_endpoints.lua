@@ -1,6 +1,6 @@
 local FunctionService = require("api/FunctionService")
 
-local NetAPI = FunctionService:new()
+local ConntrackAPI = FunctionService:new()
 
 require "ubus"
 require "uci"
@@ -8,7 +8,10 @@ require "uci"
 -- GET /api/conntrack/list
 -- Returns an array of all the tracked connections.
 -- By default, uses the `conntrack` table, however it can be changed.
-
+function ConntrackAPI:GET_TYPE_list()
+        -- Write your code what to do here
+        return self:ResponseOK({self.query_parameters});
+end
 
 -- GET /api/network/br_interfaces
 -- Returns an array of all network devices 
@@ -41,55 +44,55 @@ require "uci"
 -- * `dns` - `list of ip addresses`
 -- * `layer` - `integer`
 -- Reference: https://openwrt.org/docs/guide-user/network/ucicheatsheet#section_interface
-function NetAPI:GET_TYPE_br_interfaces()
-        local conn = ubus.connect()
-        local conf = uci.cursor()
-        if conn == nil or conf == nil then
-                return self:ResponseError("Failed to get UBUS or UCI instances.")
-        end
-        local interfaces_tbl = {}
-        if not conf:foreach("network", "interface", function (s)
-                local device = conn:call("network.device", "status", {name = s.device})
-                if device.type == "bridge" then
-                        local newDev = s
-                        newDev.internalName = s['.name']
-                        for k, v in pairs(s) do
-                                if string.sub(k, 0, 1) == "." then
-                                        newDev[k] = nil
-                                end
-                        end
-                        newDev.bridgeDevices = device['bridge-members']
-                        local bridgeIfs = conf:get("network", string.gsub(s.device, '-', '_'), "ports")
-                        newDev.bridgeInterfaces = bridgeIfs
-                        table.insert(interfaces_tbl, newDev)
-                end
-                return true
-        end) then
-                -- Can't read the network config
-                return self:ResponseError("Failed to get interfaces")
-        end
+-- function NetAPI:GET_TYPE_br_interfaces()
+--         local conn = ubus.connect()
+--         local conf = uci.cursor()
+--         if conn == nil or conf == nil then
+--                 return self:ResponseError("Failed to get UBUS or UCI instances.")
+--         end
+--         local interfaces_tbl = {}
+--         if not conf:foreach("network", "interface", function (s)
+--                 local device = conn:call("network.device", "status", {name = s.device})
+--                 if device.type == "bridge" then
+--                         local newDev = s
+--                         newDev.internalName = s['.name']
+--                         for k, v in pairs(s) do
+--                                 if string.sub(k, 0, 1) == "." then
+--                                         newDev[k] = nil
+--                                 end
+--                         end
+--                         newDev.bridgeDevices = device['bridge-members']
+--                         local bridgeIfs = conf:get("network", string.gsub(s.device, '-', '_'), "ports")
+--                         newDev.bridgeInterfaces = bridgeIfs
+--                         table.insert(interfaces_tbl, newDev)
+--                 end
+--                 return true
+--         end) then
+--                 -- Can't read the network config
+--                 return self:ResponseError("Failed to get interfaces")
+--         end
 
-        conn:close()
-	return self:ResponseOK({
-		interfaces = interfaces_tbl
-	})
-end
+--         conn:close()
+-- 	return self:ResponseOK({
+-- 		interfaces = interfaces_tbl
+-- 	})
+-- end
 
 -- Line iterator function, courtesy of https://stackoverflow.com/a/19329565 :)
-local function line_iterator(s)
-        if s:sub(-1)~="\n" then s=s.."\n" end
-        return s:gmatch("(.-)\n")
-end
+-- local function line_iterator(s)
+--         if s:sub(-1)~="\n" then s=s.."\n" end
+--         return s:gmatch("(.-)\n")
+-- end
 
-local function get_index_for_route(routes, lookup, route)
-        local idx = lookup[tostring(route)]
-        if idx == nil then
-                table.insert(routes, {id = route, routes = {}})
-                lookup[tostring(route)] = #routes
-                idx = #routes
-        end
-        return idx
-end
+-- local function get_index_for_route(routes, lookup, route)
+--         local idx = lookup[tostring(route)]
+--         if idx == nil then
+--                 table.insert(routes, {id = route, routes = {}})
+--                 lookup[tostring(route)] = #routes
+--                 idx = #routes
+--         end
+--         return idx
+-- end
 
 -- GET /api/network/get_routes
 -- Returns an array of all existing IPv4 routes as present in UCI network config
@@ -118,62 +121,62 @@ end
 -- * `disabled` - `boolean`
 --
 -- Reference: https://openwrt.org/docs/guide-user/network/ucicheatsheet#section_route
-function NetAPI:GET_TYPE_get_routes()
-        local conn = ubus.connect()
-        local conf = uci.cursor()
-        if conn == nil or conf == nil then
-                return self:ResponseError("Failed to get UBUS or UCI instances.")
-        end
-        local resp = conn:call("file", "read", {path = "/etc/iproute2/rt_tables"})
-        local lookup = {}
-        local routes = {}
+-- function NetAPI:GET_TYPE_get_routes()
+--         local conn = ubus.connect()
+--         local conf = uci.cursor()
+--         if conn == nil or conf == nil then
+--                 return self:ResponseError("Failed to get UBUS or UCI instances.")
+--         end
+--         local resp = conn:call("file", "read", {path = "/etc/iproute2/rt_tables"})
+--         local lookup = {}
+--         local routes = {}
 
-        conn:close()
-        if resp == nil or resp.data == nil then
-                -- Failed to read route table, but maybe we can still get routes.
-                if not conf:foreach("network", "route", function (s)
-                        local idx = get_index_for_route(routes, lookup, s.table)
-                        local info = {}
-                        for k, v in pairs(s) do
-                                if string.sub(k, 0, 1) ~= "." then
-                                        info[k] = v
-                                end
-                        end
-                        table.insert(routes[idx].routes, info)
-                end) then
-                        -- Can't read routes either.
-                        return self:ResponseError("Could not read route tables, and no routes are present (or can't read them)")
-                end
-                -- This should be a partial success, not sure how or if to report that
-	        return self:ResponseOK(routes)
-        end
-        local contents = string.gsub(resp.data, "\\n", "\n")
-        for line in line_iterator(contents) do
-                if line ~= nil then
-                        if string.sub(line, 0, 1) ~= "#" then
-                                local id = string.match(line, "%d+")
-                                local name = string.match(line, "\t(.+)")
-                                table.insert(routes, {name = name, id = id, routes = {}})
-                                lookup[tostring(id)] = #routes;
-                        end
-                end
-        end
+--         conn:close()
+--         if resp == nil or resp.data == nil then
+--                 -- Failed to read route table, but maybe we can still get routes.
+--                 if not conf:foreach("network", "route", function (s)
+--                         local idx = get_index_for_route(routes, lookup, s.table)
+--                         local info = {}
+--                         for k, v in pairs(s) do
+--                                 if string.sub(k, 0, 1) ~= "." then
+--                                         info[k] = v
+--                                 end
+--                         end
+--                         table.insert(routes[idx].routes, info)
+--                 end) then
+--                         -- Can't read routes either.
+--                         return self:ResponseError("Could not read route tables, and no routes are present (or can't read them)")
+--                 end
+--                 -- This should be a partial success, not sure how or if to report that
+-- 	        return self:ResponseOK(routes)
+--         end
+--         local contents = string.gsub(resp.data, "\\n", "\n")
+--         for line in line_iterator(contents) do
+--                 if line ~= nil then
+--                         if string.sub(line, 0, 1) ~= "#" then
+--                                 local id = string.match(line, "%d+")
+--                                 local name = string.match(line, "\t(.+)")
+--                                 table.insert(routes, {name = name, id = id, routes = {}})
+--                                 lookup[tostring(id)] = #routes;
+--                         end
+--                 end
+--         end
 
 
-        -- Not checking for errors here, if it fails, probably means no rules are present
-        conf:foreach("network", "route", function (s)
-                local idx = get_index_for_route(routes, lookup, s.table)
-                local info = {}
-                for k, v in pairs(s) do
-                        if string.sub(k, 0, 1) ~= "." then
-                                info[k] = v
-                        end
-                end
-                table.insert(routes[idx].routes, info)
-        end)
+--         -- Not checking for errors here, if it fails, probably means no rules are present
+--         conf:foreach("network", "route", function (s)
+--                 local idx = get_index_for_route(routes, lookup, s.table)
+--                 local info = {}
+--                 for k, v in pairs(s) do
+--                         if string.sub(k, 0, 1) ~= "." then
+--                                 info[k] = v
+--                         end
+--                 end
+--                 table.insert(routes[idx].routes, info)
+--         end)
 
-	return self:ResponseOK(routes)
-end
+-- 	return self:ResponseOK(routes)
+-- end
 
 -- GET /api/network/get_dhcp_leases
 -- Returns an array of all currently connected DHCP clients
@@ -183,85 +186,85 @@ end
 -- * `hostname` - The hostname of the device.
 -- * `device` - The network device that the device is connected to.
 -- * `active` - If the device that the lease belongs to is connected.
-function NetAPI:GET_TYPE_get_dhcp_clients()
-        -- Read DHCP leases from ubus `dnsmasq` `ipv4leases`
-        -- Get all devices ubus `networkmap` `devices_lan`
-        local conn = ubus.connect()
-        if conn == nil then
-                return self:ResponseError("Failed to get UBUS instance.")
-        end
-        local resp = conn:call("dnsmasq", "ipv4leases", {})
-        if resp == nil then
-                return self:ResponseError("Could not get ipv4 DHCP leases.")
-        end
-        local netmap = conn:call("networkmap", "devices_lan", {})
-        local leases = {}
-        local devices = {}
-        if netmap ~= nil then
-                for i, device in ipairs(netmap.devices) do
-                        devices[device.mac] = true
-                end
-        end -- If netmap is nil, it's a partial error, can still continue,
-            -- as at this point we still have DHCP leases
-        for i, lease in ipairs(resp.leases) do
-                local activeDevice
-                if devices[lease.mac] == true then activeDevice = true else activeDevice = false end
-                table.insert(leases, {valid = lease.valid, mac = lease.mac, hostname = lease.hostname, device = lease.device, active = activeDevice})
-        end
-        conn:close()
+-- function NetAPI:GET_TYPE_get_dhcp_clients()
+--         -- Read DHCP leases from ubus `dnsmasq` `ipv4leases`
+--         -- Get all devices ubus `networkmap` `devices_lan`
+--         local conn = ubus.connect()
+--         if conn == nil then
+--                 return self:ResponseError("Failed to get UBUS instance.")
+--         end
+--         local resp = conn:call("dnsmasq", "ipv4leases", {})
+--         if resp == nil then
+--                 return self:ResponseError("Could not get ipv4 DHCP leases.")
+--         end
+--         local netmap = conn:call("networkmap", "devices_lan", {})
+--         local leases = {}
+--         local devices = {}
+--         if netmap ~= nil then
+--                 for i, device in ipairs(netmap.devices) do
+--                         devices[device.mac] = true
+--                 end
+--         end -- If netmap is nil, it's a partial error, can still continue,
+--             -- as at this point we still have DHCP leases
+--         for i, lease in ipairs(resp.leases) do
+--                 local activeDevice
+--                 if devices[lease.mac] == true then activeDevice = true else activeDevice = false end
+--                 table.insert(leases, {valid = lease.valid, mac = lease.mac, hostname = lease.hostname, device = lease.device, active = activeDevice})
+--         end
+--         conn:close()
 
-	return self:ResponseOK(leases)
-end
+-- 	return self:ResponseOK(leases)
+-- end
 
-function NetAPI:UpdateBridge()
-        local interface = self.arguments.data.interface
-        local mtu = self.arguments.data.mtu
-        local name = self.arguments.data.name
-        local mac = self.arguments.data.macaddr
-        local config = uci.cursor()
-        if config == nil then
-                self:add_critical_error(500, "Failed to get UCI instance.", "uci.cursor()")
-                return
-        end
+-- function NetAPI:UpdateBridge()
+--         local interface = self.arguments.data.interface
+--         local mtu = self.arguments.data.mtu
+--         local name = self.arguments.data.name
+--         local mac = self.arguments.data.macaddr
+--         local config = uci.cursor()
+--         if config == nil then
+--                 self:add_critical_error(500, "Failed to get UCI instance.", "uci.cursor()")
+--                 return
+--         end
 
-        local changes = 0
-        if mtu ~= nil then
-                if mtu == 0 then
-                        config:delete("network", interface, "mtu")
-                else
-                        local devName = config:get("network", interface, "device")
-                        config:set("network", string.gsub(devName, '-', '_'), "mtu", mtu)
-                end
-                changes = changes + 1
-        end
+--         local changes = 0
+--         if mtu ~= nil then
+--                 if mtu == 0 then
+--                         config:delete("network", interface, "mtu")
+--                 else
+--                         local devName = config:get("network", interface, "device")
+--                         config:set("network", string.gsub(devName, '-', '_'), "mtu", mtu)
+--                 end
+--                 changes = changes + 1
+--         end
 
-        if name ~= nil then
-                name = string.gsub(name, "[^A-Za-z0-9_]", "")
-                config:set("network", interface, "name", name)
-                changes = changes + 1
-        end
+--         if name ~= nil then
+--                 name = string.gsub(name, "[^A-Za-z0-9_]", "")
+--                 config:set("network", interface, "name", name)
+--                 changes = changes + 1
+--         end
 
-        if mac ~= nil then
-                local devName = config:get("network", interface, "device")
-                config:set("network", string.gsub(devName, '-', '_'), "macaddr", mac)
-                changes = changes + 1
-        end
+--         if mac ~= nil then
+--                 local devName = config:get("network", interface, "device")
+--                 config:set("network", string.gsub(devName, '-', '_'), "macaddr", mac)
+--                 changes = changes + 1
+--         end
 
-        if changes > 0 then
-                config:commit("network")
-                local conn = ubus.connect()
-                if config == nil then
-                        self:add_critical_error(500, "Failed to get UBUS instance.", "ubus.connect()")
-                        return
-                end
-                conn:call("uci", "reload_config", {})
-                conn:close()
-        end
+--         if changes > 0 then
+--                 config:commit("network")
+--                 local conn = ubus.connect()
+--                 if config == nil then
+--                         self:add_critical_error(500, "Failed to get UBUS instance.", "ubus.connect()")
+--                         return
+--                 end
+--                 conn:call("uci", "reload_config", {})
+--                 conn:close()
+--         end
 
-	return self:ResponseOK({
-		result = "Updated " .. changes .. " values",
-	})
-end
+-- 	return self:ResponseOK({
+-- 		result = "Updated " .. changes .. " values",
+-- 	})
+-- end
 
 -- POST /api/network/actions/update_bridge
 -- This request takes in the following JSON body data:
@@ -283,90 +286,90 @@ end
 -- to the provided new values and the network service will be reloaded.
 -- If only `interface` field is provided, nothing will be changed and 
 -- the network service will not be reloaded. 
-local test_action = NetAPI:action("update_bridge", NetAPI.UpdateBridge)
-	local interface = test_action:option("interface")
-        interface.require = true
-        interface.maxlength = 256
+-- local test_action = NetAPI:action("update_bridge", NetAPI.UpdateBridge)
+-- 	local interface = test_action:option("interface")
+--         interface.require = true
+--         interface.maxlength = 256
 
-        local mtu = test_action:option("mtu")
-        function mtu:validate(value)
-                return self.dt:uinteger(value)
-        end
+--         local mtu = test_action:option("mtu")
+--         function mtu:validate(value)
+--                 return self.dt:uinteger(value)
+--         end
 
-        local name = test_action:option("name")
-        name.maxlength = 256
+--         local name = test_action:option("name")
+--         name.maxlength = 256
 
-        local mac = test_action:option("macaddr")
-        function mac:validate(value)
-                local valid, msg = self.dt:macaddr(value)
-                if valid then
-                        if string.sub(value, 0, 2) == "00" then
-                                return true
-                        else
-                                return false, "Unicast MAC address is allowed (e.g., 00:23:45:67:89:AB)."
-                        end
-                end
-                return false, msg
-        end
+--         local mac = test_action:option("macaddr")
+--         function mac:validate(value)
+--                 local valid, msg = self.dt:macaddr(value)
+--                 if valid then
+--                         if string.sub(value, 0, 2) == "00" then
+--                                 return true
+--                         else
+--                                 return false, "Unicast MAC address is allowed (e.g., 00:23:45:67:89:AB)."
+--                         end
+--                 end
+--                 return false, msg
+--         end
 
-function NetAPI:RenameBridgeDevice()
-        local old = self.arguments.data.oldDevice
-        old = string.gsub(old, "[^A-Za-z0-9_%-]", "")
-        local oldUCI = string.gsub(old, '-', '_')
+-- function NetAPI:RenameBridgeDevice()
+--         local old = self.arguments.data.oldDevice
+--         old = string.gsub(old, "[^A-Za-z0-9_%-]", "")
+--         local oldUCI = string.gsub(old, '-', '_')
 
-        local new = self.arguments.data.newDevice
-        new = string.gsub(new, "[^A-Za-z0-9_%-]", "")
-        local newUCI = string.gsub(new, '-', '_')
+--         local new = self.arguments.data.newDevice
+--         new = string.gsub(new, "[^A-Za-z0-9_%-]", "")
+--         local newUCI = string.gsub(new, '-', '_')
 
-        local config = uci.cursor()
-        if config == nil then
-                self:add_critical_error(500, "Failed to get UCI instance.", "uci.cursor()")
-                return
-        end
+--         local config = uci.cursor()
+--         if config == nil then
+--                 self:add_critical_error(500, "Failed to get UCI instance.", "uci.cursor()")
+--                 return
+--         end
 
-        local found = false
-        config:set("network", newUCI, "device")
-        if not config:foreach("network", "device", function (s)
-                if s['.name'] == oldUCI then
-                        for k, v in pairs(s) do
-                                if string.sub(k, 0, 1) ~= "." then
-                                        config:set("network", newUCI, k, v)
-                                end
-                        end
-                        found = true
-                end
-        end) then
-                self:add_error(500, "No configured devices found.", "config:set(\"network\", newUCI, \"device\")")
-                return
-        end
-        if found == true then
-                config:set("network", newUCI, "name", new)
+--         local found = false
+--         config:set("network", newUCI, "device")
+--         if not config:foreach("network", "device", function (s)
+--                 if s['.name'] == oldUCI then
+--                         for k, v in pairs(s) do
+--                                 if string.sub(k, 0, 1) ~= "." then
+--                                         config:set("network", newUCI, k, v)
+--                                 end
+--                         end
+--                         found = true
+--                 end
+--         end) then
+--                 self:add_error(500, "No configured devices found.", "config:set(\"network\", newUCI, \"device\")")
+--                 return
+--         end
+--         if found == true then
+--                 config:set("network", newUCI, "name", new)
 
-                config:delete("network", oldUCI)
+--                 config:delete("network", oldUCI)
 
-                -- If this fails, no interfaces are present/configured
-                config:foreach("network", "interface", function (s)
-                        if s.device == old then
-                                config:set("network", s['.name'], "device", new)
-                        end
-                end)
+--                 -- If this fails, no interfaces are present/configured
+--                 config:foreach("network", "interface", function (s)
+--                         if s.device == old then
+--                                 config:set("network", s['.name'], "device", new)
+--                         end
+--                 end)
 
-                config:commit("network")
-                local conn = ubus.connect()
-                if config == nil then
-                        self:add_critical_error(500, "Failed to get UBUS instance.", "ubus.connect()")
-                        return
-                end
-                conn:call("uci", "reload_config", {})
-                conn:close()
+--                 config:commit("network")
+--                 local conn = ubus.connect()
+--                 if config == nil then
+--                         self:add_critical_error(500, "Failed to get UBUS instance.", "ubus.connect()")
+--                         return
+--                 end
+--                 conn:call("uci", "reload_config", {})
+--                 conn:close()
                 
-                return self:ResponseOK({
-		        result = "Internal name changed successfully",
-	        })
-        end
+--                 return self:ResponseOK({
+-- 		        result = "Internal name changed successfully",
+-- 	        })
+--         end
 
-	return self:ResponseError("Could not find given device")
-end
+-- 	return self:ResponseError("Could not find given device")
+-- end
 
 -- POST /api/network/actions/rename_bridge
 -- This request takes in the following JSON body data:
@@ -390,14 +393,14 @@ end
 -- It is recommended to use the device names as seen in the `bridge_interfaces` GET request, as that is
 -- what is used to find and update the interfaces.
 -- Any other characters will be removed.
-local test_action = NetAPI:action("rename_bridge", NetAPI.RenameBridgeDevice)
-	local oldDevice = test_action:option("oldDevice")
-        oldDevice.require = true
-        oldDevice.maxlength = 256
+-- local test_action = NetAPI:action("rename_bridge", NetAPI.RenameBridgeDevice)
+-- 	local oldDevice = test_action:option("oldDevice")
+--         oldDevice.require = true
+--         oldDevice.maxlength = 256
 
-	local newDevice = test_action:option("newDevice")
-        newDevice.require = true
-        newDevice.maxlength = 256
+-- 	local newDevice = test_action:option("newDevice")
+--         newDevice.require = true
+--         newDevice.maxlength = 256
 
 
-return NetAPI
+return ConntrackAPI
