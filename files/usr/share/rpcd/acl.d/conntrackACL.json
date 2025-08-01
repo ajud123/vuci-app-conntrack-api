@@ -1,0 +1,15 @@
+{
+  "services/example": {
+    "description": "Conntrack endpoint permissions",
+    "read": {
+      "api": [
+        "/conntrack/*"
+      ]
+    },
+    "write": {
+      "api": [
+        "/conntrack/*"
+      ]
+    }
+  }
+}
