@@ -1,0 +1,533 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {},
+        "title": "Requests",
+        "version": "1.0.0"
+    },
+    "host": "192.168.1.1",
+    "basePath": "/",
+    "schemes": [
+        "https"
+    ],
+    "paths": {
+        "/api/conntrack/actions/delete_entries": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "schema": {
+                            "properties": {
+                                "data": {
+                                    "properties": {
+                                        "args": {
+                                            "description": "Array, containing the protocol arguments in this format: [\"arg1 val1\", \"arg2 val2\", ...]",
+                                            "example": [
+                                                "arg1 val1",
+                                                "arg2 val2"
+                                            ],
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "dst": {
+                                            "description": "Destination IP of the connection, allows CIDR notation. Accepts IPv4 and IPv6 addresses.",
+                                            "example": "0.0.0.0",
+                                            "type": "string"
+                                        },
+                                        "family": {
+                                            "description": "Layer 3 protocol name (i.e IPv4, IPv6)",
+                                            "example": "ipv4",
+                                            "type": "string"
+                                        },
+                                        "mask-dst": {
+                                            "description": "Destination IP mask, used for specifying multiple destination IP addresses.",
+                                            "example": "0.0.0.0",
+                                            "type": "string"
+                                        },
+                                        "mask-src": {
+                                            "description": "Source IP mask, used for specifying multiple source IP addresses.",
+                                            "example": "0.0.0.0",
+                                            "type": "string"
+                                        },
+                                        "orig-zone": {
+                                            "description": "Specifies the original conntrack zone to filter for.",
+                                            "example": 0,
+                                            "type": "number"
+                                        },
+                                        "protocol": {
+                                            "description": "Layer 4 protocol name (i.e tcp, udp)",
+                                            "example": "tcp",
+                                            "type": "string"
+                                        },
+                                        "reply-dst": {
+                                            "description": "Reply destination IP of the connection. Accepts IPv4 and IPv6 addresses.",
+                                            "example": "0.0.0.0",
+                                            "type": "string"
+                                        },
+                                        "reply-src": {
+                                            "description": "Reply source IP of the connection. Accepts IPv4 and IPv6 addresses.",
+                                            "example": "0.0.0.0",
+                                            "type": "string"
+                                        },
+                                        "reply-zone": {
+                                            "description": "Specifies the reply conntrack zone to filter for.",
+                                            "example": 0,
+                                            "type": "number"
+                                        },
+                                        "src": {
+                                            "description": "Source IP of the connection, allows CIDR notation. Accepts IPv4 and IPv6 addresses.",
+                                            "example": "0.0.0.0",
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "description": "Represents the connection status. Accepts multiple values separated by comma (,). Allowed values: ASSURED, SEEN_REPLY, UNSET, FIXED_TIMEOUT, EXPECTED, OFFLOAD, HW_OFFLOAD",
+                                            "example": "ASSURED",
+                                            "type": "string"
+                                        },
+                                        "table": {
+                                            "description": "The table to display the entries of. Defaults to `conntrack`",
+                                            "example": "conntrack",
+                                            "type": "string"
+                                        },
+                                        "timeout": {
+                                            "example": 0,
+                                            "type": "number"
+                                        },
+                                        "zone": {
+                                            "description": "Specifies the conntrack zone to filter for.",
+                                            "example": 0,
+                                            "type": "number"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A list of the conntrack entries that were deleted.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "success": {
+                                    "type": "boolean",
+                                    "example": true
+                                },
+                                "data": {
+                                    "type": "object",
+                                    "properties": {
+                                        "deleted_entries": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "layer3": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "dst": {
+                                                                    "type": "string",
+                                                                    "example": "192.168.1.1",
+                                                                    "description": "Destination IP address. Accepts IPv4 and IPv6 addresses."
+                                                                },
+                                                                "protonum": {
+                                                                    "type": "string",
+                                                                    "example": "2"
+                                                                },
+                                                                "src": {
+                                                                    "type": "string",
+                                                                    "example": "192.168.1.132",
+                                                                    "description": "Source IP address. Accepts IPv4 and IPv6 addresses."
+                                                                },
+                                                                "protoname": {
+                                                                    "type": "string",
+                                                                    "example": "ipv4"
+                                                                }
+                                                            }
+                                                        },
+                                                        "direction": {
+                                                            "type": "string",
+                                                            "example": "original"
+                                                        },
+                                                        "layer4": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "dport": {
+                                                                    "type": "string",
+                                                                    "example": "443"
+                                                                },
+                                                                "protonum": {
+                                                                    "type": "string",
+                                                                    "example": "6"
+                                                                },
+                                                                "sport": {
+                                                                    "type": "string",
+                                                                    "example": "35394"
+                                                                },
+                                                                "protoname": {
+                                                                    "type": "string",
+                                                                    "example": "tcp"
+                                                                }
+                                                            }
+                                                        },
+                                                        "counters": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "packets": {
+                                                                    "type": "string",
+                                                                    "example": "5"
+                                                                },
+                                                                "bytes": {
+                                                                    "type": "string",
+                                                                    "example": "1181"
+                                                                }
+                                                            }
+                                                        },
+                                                        "state": {
+                                                            "type": "string",
+                                                            "example": "ESTABLISHED"
+                                                        },
+                                                        "timeout": {
+                                                            "type": "string",
+                                                            "example": "7439"
+                                                        },
+                                                        "mark": {
+                                                            "type": "string",
+                                                            "example": "0"
+                                                        },
+                                                        "assured": {
+                                                            "type": "string",
+                                                            "example": ""
+                                                        },
+                                                        "id": {
+                                                            "type": "string",
+                                                            "example": "651634406"
+                                                        },
+                                                        "use": {
+                                                            "type": "string",
+                                                            "example": "1"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Delete all conntrack entries, that match provided post body filtering parameters. By default deletes from the `conntrack` table, however that can be changed with the `table` parameter. All arguments narrow down the search, meaning providing no arguments performs the same action as using `flush_table`.",
+                "operationId": "conntrackDelete",
+                "summary": "Delete specified entries"
+            }
+        },
+        "/api/conntrack/actions/flush_table": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "schema": {
+                            "properties": {
+                                "data": {
+                                    "properties": {
+                                        "protocol": {
+                                            "description": "Layer 4 protocol name (i.e tcp, udp)",
+                                            "example": "tcp",
+                                            "type": "string"
+                                        },
+                                        "table": {
+                                            "description": "The table to display the entries of. Defaults to `conntrack`",
+                                            "example": "conntrack",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Confirmation message after flushing the conntrack table.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "success": {
+                                    "type": "boolean",
+                                    "example": true
+                                },
+                                "data": {
+                                    "type": "object",
+                                    "properties": {
+                                        "response": {
+                                            "type": "string",
+                                            "example": "The conntrack table has been emptied."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Deletes all entries from a specified conntrack table. By default, uses the `conntrack` table, however, that can be changed with the `table` post body parameter. Optionally, a protocol post body parameter can be specified to flush.",
+                "operationId": "conntrackFlush",
+                "summary": "Flush all entries from a conntrack table."
+            }
+        },
+        "/api/conntrack/count_entries": {
+            "get": {
+                "parameters": [
+                    {
+                        "description": "The table to display the entry count of. Defaults to `conntrack`",
+                        "in": "query",
+                        "name": "table",
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The total count of conntrack entries.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "success": {
+                                    "type": "boolean",
+                                    "example": true
+                                },
+                                "data": {
+                                    "type": "number",
+                                    "example": 74,
+                                    "description": "The total number of entries."
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "The number of tracked connections from a given table. By default, uses the `conntrack` table, however it can be changed with the `table` query parameter.",
+                "operationId": "conntrackCountEntries",
+                "summary": "Show conntrack entry count"
+            }
+        },
+        "/api/conntrack/list": {
+            "get": {
+                "parameters": [
+                    {
+                        "description": "The table to display the entries of. Defaults to `conntrack`",
+                        "in": "query",
+                        "name": "table",
+                        "type": "string"
+                    },
+                    {
+                        "description": "Source IP of the connection, allows CIDR notation. Accepts IPv4 and IPv6 addresses.",
+                        "in": "query",
+                        "name": "src",
+                        "type": "string"
+                    },
+                    {
+                        "description": "Destination IP of the connection, allows CIDR notation. Accepts IPv4 and IPv6 addresses.",
+                        "in": "query",
+                        "name": "dst",
+                        "type": "string"
+                    },
+                    {
+                        "description": "Reply source IP of the connection. Accepts IPv4 and IPv6 addresses.",
+                        "in": "query",
+                        "name": "reply-src",
+                        "type": "string"
+                    },
+                    {
+                        "description": "Reply destination IP of the connection. Accepts IPv4 and IPv6 addresses.",
+                        "in": "query",
+                        "name": "reply-dst",
+                        "type": "string"
+                    },
+                    {
+                        "description": "Layer 4 protocol name (i.e tcp, udp)",
+                        "in": "query",
+                        "name": "protocol",
+                        "type": "string"
+                    },
+                    {
+                        "description": "Layer 3 protocol name (i.e IPv4, IPv6)",
+                        "in": "query",
+                        "name": "family",
+                        "type": "string"
+                    },
+                    {
+                        "description": "Specifies the conntrack zone to filter for.",
+                        "in": "query",
+                        "name": "zone",
+                        "type": "string"
+                    },
+                    {
+                        "description": "Specifies the original conntrack zone to filter for.",
+                        "in": "query",
+                        "name": "orig-zone",
+                        "type": "string"
+                    },
+                    {
+                        "description": "Specifies the reply conntrack zone to filter for.",
+                        "in": "query",
+                        "name": "reply-zone",
+                        "type": "string"
+                    },
+                    {
+                        "description": "Represents the connection status. Accepts multiple values separated by comma (,). Allowed values: ASSURED, SEEN_REPLY, UNSET, FIXED_TIMEOUT, EXPECTED, OFFLOAD, HW_OFFLOAD",
+                        "in": "query",
+                        "name": "status",
+                        "type": "string"
+                    },
+                    {
+                        "description": "Source IP mask, used for specifying multiple source IP addresses.",
+                        "in": "query",
+                        "name": "mask-src",
+                        "type": "string"
+                    },
+                    {
+                        "description": "Destination IP mask, used for specifying multiple destination IP addresses.",
+                        "in": "query",
+                        "name": "mask-dst",
+                        "type": "string"
+                    },
+                    {
+                        "description": "Array, containing the protocol arguments in this format: `args=arg1:val1;arg2:val2;...`",
+                        "in": "query",
+                        "name": "args",
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A list of conntrack entries.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "success": {
+                                    "type": "boolean",
+                                    "example": true
+                                },
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "layer3": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "dst": {
+                                                            "type": "string",
+                                                            "example": "192.168.1.1",
+                                                            "description": "Destination IP address. Accepts IPv4 and IPv6 addresses."
+                                                        },
+                                                        "protonum": {
+                                                            "type": "string",
+                                                            "example": "2"
+                                                        },
+                                                        "src": {
+                                                            "type": "string",
+                                                            "example": "192.168.1.132",
+                                                            "description": "Source IP address. Accepts IPv4 and IPv6 addresses."
+                                                        },
+                                                        "protoname": {
+                                                            "type": "string",
+                                                            "example": "ipv4"
+                                                        }
+                                                    }
+                                                },
+                                                "direction": {
+                                                    "type": "string",
+                                                    "example": "original"
+                                                },
+                                                "layer4": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "dport": {
+                                                            "type": "string",
+                                                            "example": "443"
+                                                        },
+                                                        "protonum": {
+                                                            "type": "string",
+                                                            "example": "6"
+                                                        },
+                                                        "sport": {
+                                                            "type": "string",
+                                                            "example": "35394"
+                                                        },
+                                                        "protoname": {
+                                                            "type": "string",
+                                                            "example": "tcp"
+                                                        }
+                                                    }
+                                                },
+                                                "counters": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "packets": {
+                                                            "type": "string",
+                                                            "example": "5"
+                                                        },
+                                                        "bytes": {
+                                                            "type": "string",
+                                                            "example": "1181"
+                                                        }
+                                                    }
+                                                },
+                                                "state": {
+                                                    "type": "string",
+                                                    "example": "ESTABLISHED"
+                                                },
+                                                "timeout": {
+                                                    "type": "string",
+                                                    "example": "7439"
+                                                },
+                                                "mark": {
+                                                    "type": "string",
+                                                    "example": "0"
+                                                },
+                                                "assured": {
+                                                    "type": "string",
+                                                    "example": ""
+                                                },
+                                                "id": {
+                                                    "type": "string",
+                                                    "example": "651634406"
+                                                },
+                                                "use": {
+                                                    "type": "string",
+                                                    "example": "1"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Returns an array of all the tracked connections. By default, uses the `conntrack` table, however it can be changed. Accepts query parameters, the parameter names are the same as when using the conntrack CLI program.",
+                "operationId": "conntrackList",
+                "summary": "Show conntrack entry list"
+            }
+        }
+    },
+    "tags": []
+}
