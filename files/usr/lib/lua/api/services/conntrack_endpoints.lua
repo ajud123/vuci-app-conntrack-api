@@ -3,7 +3,6 @@ local FunctionService = require("api/FunctionService")
 local ConntrackAPI = FunctionService:new()
 
 require "ubus"
-require "uci"
 
 local function process_params(params)
         local newParams         = params;
